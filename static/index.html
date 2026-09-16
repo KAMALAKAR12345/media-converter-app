@@ -3,119 +3,225 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Media Converter & Compressor</title>
+  <title>Media & Privacy Hub</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #121212; color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-    .card { background: #1e1e1e; border: 1px solid #2d2d2d; border-radius: 12px; max-width: 480px; width: 100%; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    h1 { font-size: 22px; margin-bottom: 8px; color: #4CAF50; }
-    p.sub { font-size: 13px; color: #888; margin-bottom: 24px; }
-    .dropzone { border: 2px dashed #3a3a3a; border-radius: 8px; padding: 28px 16px; text-align: center; cursor: pointer; transition: 0.2s; background: #181818; }
+    .card { background: #1e1e1e; border: 1px solid #2d2d2d; border-radius: 12px; max-width: 520px; width: 100%; padding: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { font-size: 22px; color: #4CAF50; margin-bottom: 6px; }
+    p.sub { font-size: 13px; color: #888; margin-bottom: 20px; }
+    
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #2d2d2d; padding-bottom: 10px; }
+    .tab-btn { background: none; border: none; color: #888; padding: 8px 12px; font-weight: 600; cursor: pointer; border-radius: 6px; font-size: 13px; }
+    .tab-btn.active { color: #4CAF50; background: #252525; }
+
+    .tool-panel { display: none; }
+    .tool-panel.active { display: block; }
+
+    .dropzone { border: 2px dashed #3a3a3a; border-radius: 8px; padding: 26px 16px; text-align: center; cursor: pointer; transition: 0.2s; background: #181818; }
     .dropzone:hover { border-color: #4CAF50; background: #222; }
     input[type="file"] { display: none; }
     .file-name { margin-top: 10px; font-size: 13px; color: #bbb; word-break: break-all; }
-    .controls { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    label { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    
+    .controls { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
     select, input[type="range"] { width: 100%; padding: 8px; background: #282828; border: 1px solid #3a3a3a; border-radius: 6px; color: #fff; font-size: 14px; }
-    .btn { margin-top: 24px; width: 100%; padding: 12px; background: #4CAF50; border: none; border-radius: 6px; color: white; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; }
+    
+    .btn { margin-top: 20px; width: 100%; padding: 12px; background: #4CAF50; border: none; border-radius: 6px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; }
     .btn:hover { background: #45a049; }
     .btn:disabled { background: #2f4f32; color: #777; cursor: not-allowed; }
-    .status { margin-top: 14px; font-size: 13px; text-align: center; color: #aaa; min-height: 18px; }
+    .status { margin-top: 12px; font-size: 12px; text-align: center; color: #aaa; min-height: 16px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Media Converter & Compressor</h1>
-    <p class="sub">In-memory format conversion and optimization</p>
+    <h1>Media & Privacy Tools</h1>
+    <p class="sub">Fast in-memory processing without server storage</p>
 
-    <div class="dropzone" id="dropzone">
-      <span id="drop-text">Click or drag an image here</span>
-      <div class="file-name" id="fileName"></div>
-      <input type="file" id="fileInput" accept="image/*" />
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('image')">Image Convert</button>
+      <button class="tab-btn" onclick="switchTab('privacy')">Privacy Strip</button>
+      <button class="tab-btn" onclick="switchTab('audio')">Audio Convert</button>
     </div>
 
-    <div class="controls">
-      <div>
-        <label>Format</label>
-        <select id="formatSelect">
-          <option value="WEBP">WebP (Max Compression)</option>
-          <option value="JPEG">JPEG</option>
-          <option value="PNG">PNG (Lossless)</option>
-        </select>
+    <!-- 1. Image Tool -->
+    <div id="imagePanel" class="tool-panel active">
+      <div class="dropzone" onclick="document.getElementById('imgInput').click()">
+        <span id="imgText">Drop image (PNG, JPG, WEBP)</span>
+        <div class="file-name" id="imgName"></div>
+        <input type="file" id="imgInput" accept="image/*" />
       </div>
-      <div>
-        <label id="qualityLabel">Quality: 80%</label>
-        <input type="range" id="qualityRange" min="10" max="100" value="80" />
+      <div class="controls">
+        <div>
+          <label>Format</label>
+          <select id="imgFormat">
+            <option value="WEBP">WebP</option>
+            <option value="JPEG">JPEG</option>
+            <option value="PNG">PNG</option>
+          </select>
+        </div>
+        <div>
+          <label id="qualityLabel">Quality: 80%</label>
+          <input type="range" id="imgQuality" min="10" max="100" value="80" />
+        </div>
       </div>
+      <button class="btn" id="imgBtn" disabled onclick="runImage()">Convert & Download</button>
+      <div class="status" id="imgStatus"></div>
     </div>
 
-    <button class="btn" id="convertBtn" disabled>Convert & Download</button>
-    <div class="status" id="status"></div>
+    <!-- 2. Privacy Tool -->
+    <div id="privacyPanel" class="tool-panel">
+      <div class="dropzone" onclick="document.getElementById('privInput').click()">
+        <span id="privText">Drop photo to strip GPS & EXIF</span>
+        <div class="file-name" id="privName"></div>
+        <input type="file" id="privInput" accept="image/*" />
+      </div>
+      <button class="btn" id="privBtn" disabled onclick="runPrivacy()">Strip Metadata & Download</button>
+      <div class="status" id="privStatus"></div>
+    </div>
+
+    <!-- 3. Audio Tool -->
+    <div id="audioPanel" class="tool-panel">
+      <div class="dropzone" onclick="document.getElementById('audInput').click()">
+        <span id="audText">Drop audio or video file</span>
+        <div class="file-name" id="audName"></div>
+        <input type="file" id="audInput" accept="audio/*,video/*" />
+      </div>
+      <div class="controls">
+        <div>
+          <label>Format</label>
+          <select id="audFormat">
+            <option value="mp3">MP3</option>
+            <option value="wav">WAV</option>
+            <option value="ogg">OGG</option>
+          </select>
+        </div>
+        <div>
+          <label>Bitrate</label>
+          <select id="audBitrate">
+            <option value="192k">192 kbps (Standard)</option>
+            <option value="320k">320 kbps (High Quality)</option>
+            <option value="128k">128 kbps (Small Size)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" id="audBtn" disabled onclick="runAudio()">Convert Audio & Download</button>
+      <div class="status" id="audStatus"></div>
+    </div>
   </div>
 
   <script>
-    const fileInput = document.getElementById("fileInput");
-    const dropzone = document.getElementById("dropzone");
-    const fileName = document.getElementById("fileName");
-    const dropText = document.getElementById("drop-text");
-    const convertBtn = document.getElementById("convertBtn");
-    const qualityRange = document.getElementById("qualityRange");
-    const qualityLabel = document.getElementById("qualityLabel");
-    const formatSelect = document.getElementById("formatSelect");
-    const statusText = document.getElementById("status");
-
-    let selectedFile = null;
-
-    dropzone.onclick = () => fileInput.click();
-    fileInput.onchange = (e) => handleFile(e.target.files[0]);
-
-    qualityRange.oninput = () => {
-      qualityLabel.textContent = `Quality: ${qualityRange.value}%`;
-    };
-
-    function handleFile(file) {
-      if (!file) return;
-      selectedFile = file;
-      dropText.style.display = "none";
-      fileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-      convertBtn.disabled = false;
-      statusText.textContent = "Ready to convert";
+    function switchTab(type) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+      if (type === 'image') {
+        document.querySelector('.tabs button:nth-child(1)').classList.add('active');
+        document.getElementById('imagePanel').classList.add('active');
+      } else if (type === 'privacy') {
+        document.querySelector('.tabs button:nth-child(2)').classList.add('active');
+        document.getElementById('privacyPanel').classList.add('active');
+      } else {
+        document.querySelector('.tabs button:nth-child(3)').classList.add('active');
+        document.getElementById('audioPanel').classList.add('active');
+      }
     }
 
-    convertBtn.onclick = async () => {
-      if (!selectedFile) return;
-      convertBtn.disabled = true;
-      statusText.textContent = "Processing in RAM...";
+    let imgFile = null, privFile = null, audFile = null;
 
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("target_format", formatSelect.value);
-      formData.append("quality", qualityRange.value);
+    document.getElementById('imgInput').onchange = (e) => {
+      imgFile = e.target.files[0];
+      if (!imgFile) return;
+      document.getElementById('imgText').style.display = 'none';
+      document.getElementById('imgName').textContent = `${imgFile.name} (${(imgFile.size / 1024).toFixed(1)} KB)`;
+      document.getElementById('imgBtn').disabled = false;
+    };
+
+    document.getElementById('privInput').onchange = (e) => {
+      privFile = e.target.files[0];
+      if (!privFile) return;
+      document.getElementById('privText').style.display = 'none';
+      document.getElementById('privName').textContent = `${privFile.name} (${(privFile.size / 1024).toFixed(1)} KB)`;
+      document.getElementById('privBtn').disabled = false;
+    };
+
+    document.getElementById('audInput').onchange = (e) => {
+      audFile = e.target.files[0];
+      if (!audFile) return;
+      document.getElementById('audText').style.display = 'none';
+      document.getElementById('audName').textContent = `${audFile.name} (${(audFile.size / (1024*1024)).toFixed(2)} MB)`;
+      document.getElementById('audBtn').disabled = false;
+    };
+
+    document.getElementById('imgQuality').oninput = (e) => {
+      document.getElementById('qualityLabel').textContent = `Quality: ${e.target.value}%`;
+    };
+
+    async function downloadHelper(res, defaultName) {
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = defaultName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    }
+
+    async function runImage() {
+      const btn = document.getElementById('imgBtn');
+      const st = document.getElementById('imgStatus');
+      btn.disabled = true;
+      st.textContent = "Processing image...";
+      const fd = new FormData();
+      fd.append("file", imgFile);
+      fd.append("target_format", document.getElementById('imgFormat').value);
+      fd.append("quality", document.getElementById('imgQuality').value);
 
       try {
-        const res = await fetch("/api/process-image", { method: "POST", body: formData });
-        if (!res.ok) throw new Error("Conversion failed on server.");
+        const res = await fetch("/api/process-image", { method: "POST", body: fd });
+        if (!res.ok) throw new Error("Processing failed.");
+        await downloadHelper(res, `converted_${imgFile.name.split('.')[0]}.${document.getElementById('imgFormat').value.toLowerCase()}`);
+        st.textContent = "Done! Download started.";
+      } catch (err) { st.textContent = err.message; }
+      finally { btn.disabled = false; }
+    }
 
-        const blob = await res.blob();
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = downloadUrl;
-        const ext = formatSelect.value.toLowerCase();
-        a.download = `converted_${selectedFile.name.split('.')[0]}.${ext}`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(downloadUrl);
+    async function runPrivacy() {
+      const btn = document.getElementById('privBtn');
+      const st = document.getElementById('privStatus');
+      btn.disabled = true;
+      st.textContent = "Stripping metadata...";
+      const fd = new FormData();
+      fd.append("file", privFile);
 
-        statusText.textContent = "Done! Download started.";
-        statusText.style.color = "#4CAF50";
-      } catch (err) {
-        statusText.textContent = err.message;
-        statusText.style.color = "#f44336";
-      } finally {
-        convertBtn.disabled = false;
-      }
-    };
+      try {
+        const res = await fetch("/api/strip-metadata", { method: "POST", body: fd });
+        if (!res.ok) throw new Error("Stripping failed.");
+        await downloadHelper(res, `clean_${privFile.name}`);
+        st.textContent = "Metadata stripped successfully!";
+      } catch (err) { st.textContent = err.message; }
+      finally { btn.disabled = false; }
+    }
+
+    async function runAudio() {
+      const btn = document.getElementById('audBtn');
+      const st = document.getElementById('audStatus');
+      btn.disabled = true;
+      st.textContent = "Processing audio stream...";
+      const fd = new FormData();
+      fd.append("file", audFile);
+      fd.append("target_format", document.getElementById('audFormat').value);
+      fd.append("bitrate", document.getElementById('audBitrate').value);
+
+      try {
+        const res = await fetch("/api/convert-audio", { method: "POST", body: fd });
+        if (!res.ok) throw new Error("Audio conversion failed.");
+        await downloadHelper(res, `converted_${audFile.name.split('.')[0]}.${document.getElementById('audFormat').value}`);
+        st.textContent = "Done! Audio download started.";
+      } catch (err) { st.textContent = err.message; }
+      finally { btn.disabled = false; }
+    }
   </script>
 </body>
 </html>
