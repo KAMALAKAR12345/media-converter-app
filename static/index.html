@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Media Converter & Compressor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #121212; color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: #1e1e1e; border: 1px solid #2d2d2d; border-radius: 12px; max-width: 480px; width: 100%; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { font-size: 22px; margin-bottom: 8px; color: #4CAF50; }
+    p.sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+    .dropzone { border: 2px dashed #3a3a3a; border-radius: 8px; padding: 28px 16px; text-align: center; cursor: pointer; transition: 0.2s; background: #181818; }
+    .dropzone:hover { border-color: #4CAF50; background: #222; }
+    input[type="file"] { display: none; }
+    .file-name { margin-top: 10px; font-size: 13px; color: #bbb; word-break: break-all; }
+    .controls { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    select, input[type="range"] { width: 100%; padding: 8px; background: #282828; border: 1px solid #3a3a3a; border-radius: 6px; color: #fff; font-size: 14px; }
+    .btn { margin-top: 24px; width: 100%; padding: 12px; background: #4CAF50; border: none; border-radius: 6px; color: white; font-weight: 600; font-size: 15px; cursor: pointer; transition: 0.2s; }
+    .btn:hover { background: #45a049; }
+    .btn:disabled { background: #2f4f32; color: #777; cursor: not-allowed; }
+    .status { margin-top: 14px; font-size: 13px; text-align: center; color: #aaa; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Media Converter & Compressor</h1>
+    <p class="sub">In-memory format conversion and optimization</p>
+
+    <div class="dropzone" id="dropzone">
+      <span id="drop-text">Click or drag an image here</span>
+      <div class="file-name" id="fileName"></div>
+      <input type="file" id="fileInput" accept="image/*" />
+    </div>
+
+    <div class="controls">
+      <div>
+        <label>Format</label>
+        <select id="formatSelect">
+          <option value="WEBP">WebP (Max Compression)</option>
+          <option value="JPEG">JPEG</option>
+          <option value="PNG">PNG (Lossless)</option>
+        </select>
+      </div>
+      <div>
+        <label id="qualityLabel">Quality: 80%</label>
+        <input type="range" id="qualityRange" min="10" max="100" value="80" />
+      </div>
+    </div>
+
+    <button class="btn" id="convertBtn" disabled>Convert & Download</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const dropzone = document.getElementById("dropzone");
+    const fileName = document.getElementById("fileName");
+    const dropText = document.getElementById("drop-text");
+    const convertBtn = document.getElementById("convertBtn");
+    const qualityRange = document.getElementById("qualityRange");
+    const qualityLabel = document.getElementById("qualityLabel");
+    const formatSelect = document.getElementById("formatSelect");
+    const statusText = document.getElementById("status");
+
+    let selectedFile = null;
+
+    dropzone.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+    qualityRange.oninput = () => {
+      qualityLabel.textContent = `Quality: ${qualityRange.value}%`;
+    };
+
+    function handleFile(file) {
+      if (!file) return;
+      selectedFile = file;
+      dropText.style.display = "none";
+      fileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      convertBtn.disabled = false;
+      statusText.textContent = "Ready to convert";
+    }
+
+    convertBtn.onclick = async () => {
+      if (!selectedFile) return;
+      convertBtn.disabled = true;
+      statusText.textContent = "Processing in RAM...";
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("target_format", formatSelect.value);
+      formData.append("quality", qualityRange.value);
+
+      try {
+        const res = await fetch("/api/process-image", { method: "POST", body: formData });
+        if (!res.ok) throw new Error("Conversion failed on server.");
+
+        const blob = await res.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        const ext = formatSelect.value.toLowerCase();
+        a.download = `converted_${selectedFile.name.split('.')[0]}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+
+        statusText.textContent = "Done! Download started.";
+        statusText.style.color = "#4CAF50";
+      } catch (err) {
+        statusText.textContent = err.message;
+        statusText.style.color = "#f44336";
+      } finally {
+        convertBtn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
