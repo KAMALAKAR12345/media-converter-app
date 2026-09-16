@@ -5,6 +5,8 @@ from PIL import Image
 from pydub import AudioSegment
 import io
 import os
+import static_ffmpeg
+static_ffmpeg.add_paths()
 
 app = FastAPI(title="Multi-Utility Media Hub")
 

@@ -3,4 +3,4 @@ uvicorn
 python-multipart
 pillow
 pydub
-audioop-lts
+static-ffmpeg
