@@ -2,6 +2,7 @@ import asyncio
 import io
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -79,7 +80,6 @@ async def strip_metadata(file: UploadFile = File(...)):
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
 
-        # Re-create image buffer without copying EXIF tags
         clean_image = Image.new(image.mode, image.size)
         clean_image.putdata(list(image.getdata()))
 
@@ -101,7 +101,19 @@ async def strip_metadata(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Metadata stripping failed: {str(e)}")
 
 
-# 3. Fast Asynchronous Audio Converter (Direct FFmpeg Subprocess)
+# Synchronous worker executed in a background thread to prevent blocking
+def _execute_ffmpeg(cmd: list[str]) -> bytes:
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr[:300])
+
+
+# 3. Audio Converter (Windows & Linux Compatible)
 @app.post("/api/convert-audio")
 async def convert_audio(
     file: UploadFile = File(...),
@@ -113,20 +125,16 @@ async def convert_audio(
     if target_format not in valid_formats:
         raise HTTPException(status_code=400, detail="Unsupported audio format.")
 
-    # Create temporary scratch directory to avoid PCM in-memory expansion
     with tempfile.TemporaryDirectory() as tmpdir:
         safe_filename = Path(file.filename).name
         input_path = Path(tmpdir) / safe_filename
         output_filename = f"{Path(safe_filename).stem}_converted.{target_format}"
         output_path = Path(tmpdir) / output_filename
 
-        # Stream upload directly to disk
         with open(input_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        # Build FFmpeg command
         cmd = ["ffmpeg", "-y", "-i", str(input_path)]
-
         if target_format in ("mp3", "ogg"):
             cmd += ["-b:a", bitrate, "-threads", "1"]
         elif target_format == "wav":
@@ -134,17 +142,11 @@ async def convert_audio(
 
         cmd.append(str(output_path))
 
-        # Run native FFmpeg asynchronously
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        _, stderr = await proc.communicate()
-
-        if proc.returncode != 0:
-            error_msg = stderr.decode(errors="replace")[:300]
-            raise HTTPException(status_code=500, detail=f"FFmpeg conversion failed: {error_msg}")
+        try:
+            # Runs blocking subprocess in an async thread pool, preventing Windows NotImplementedError
+            await asyncio.to_thread(_execute_ffmpeg, cmd)
+        except RuntimeError as err:
+            raise HTTPException(status_code=500, detail=f"FFmpeg conversion failed: {str(err)}")
 
         with open(output_path, "rb") as f:
             data = f.read()
